@@ -11,7 +11,10 @@
 
 <header>
   <div class="titles">
-    <h1>{APP_NAME}</h1>
+    <h1>
+      <span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      {APP_NAME}
+    </h1>
     <p class="muted tagline">{APP_TAGLINE}</p>
   </div>
 
@@ -37,7 +40,45 @@
   }
 
   h1 {
+    display: flex;
+    align-items: center;
     font-size: 2.1rem;
+  }
+
+  /* A small CSS-drawn mark rather than an image or icon library, in keeping
+     with the rest of the interface: four bars standing in for a peak meter,
+     tilted like a needle mid-swing. One bar carries the accent as the mark's
+     single point of color. */
+  .mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 28px;
+    margin-right: 12px;
+    transform: rotate(-8deg);
+  }
+
+  .mark i {
+    width: 5px;
+    border-radius: 5px;
+    background: var(--text);
+  }
+
+  .mark i:nth-child(1) {
+    height: 13px;
+  }
+
+  .mark i:nth-child(2) {
+    height: 26px;
+    background: var(--accent);
+  }
+
+  .mark i:nth-child(3) {
+    height: 20px;
+  }
+
+  .mark i:nth-child(4) {
+    height: 10px;
   }
 
   .tagline {
