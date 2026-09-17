@@ -1,8 +1,13 @@
 <script lang="ts">
-  import type { QueuedFile } from '@airflac/shared';
+  import { isMetadataOnlyChange, type QueuedFile } from '@airflac/shared';
 
   import { airflac } from '../lib/stores/queue.svelte.js';
-  import { formatBitrate, formatChannels, formatSampleRate } from '../lib/format.js';
+  import {
+    describeStorage,
+    formatBitrate,
+    formatChannels,
+    formatSampleRate,
+  } from '../lib/format.js';
   import ArtworkPicker from './ArtworkPicker.svelte';
 
   interface Props {
@@ -13,9 +18,8 @@
 
   const edits = $derived(airflac.editsFor(file));
   const editable = $derived(file.status === 'ready');
-  const alreadyFlac = $derived(file.tech?.codec.toLowerCase() === 'flac');
   const metadataOnly = $derived(
-    alreadyFlac && airflac.settings.sampleRate === 'source' && airflac.settings.bitDepth === 'source',
+    file.tech !== null && isMetadataOnlyChange(airflac.settings, file.tech),
   );
 </script>
 
@@ -43,12 +47,16 @@
 
       <dt>Compression</dt>
       <dd>{file.tech?.lossless ? 'Lossless' : 'Lossy'}</dd>
+
+      <dt>Storage</dt>
+      <dd>{describeStorage(file.originalSize, file.tech)}</dd>
     </dl>
 
     {#if metadataOnly && file.status === 'ready'}
       <p class="muted note">
-        Already FLAC. Only the metadata will be rewritten — the audio is copied untouched. Choose a
-        different sample rate or bit depth if you want it re-encoded.
+        Already FLAC, so only the metadata will be rewritten and the audio is copied untouched — the
+        compression level does not apply. There is little space left to reclaim from a file that is
+        already compressed; choose a different sample rate or bit depth if you do want it re-encoded.
       </p>
     {/if}
   </section>

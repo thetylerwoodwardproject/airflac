@@ -10,6 +10,8 @@
     formatSampleRate,
   } from '../lib/format.js';
   import { IN_PROGRESS_STATUSES, STATUS_LABELS, sizeGrew, sizeSummary } from '../lib/queueDisplay.js';
+  import { isMetadataOnlyChange } from '@airflac/shared';
+
   import { airflac } from '../lib/stores/queue.svelte.js';
   import FileDetails from './FileDetails.svelte';
   import FileQueueCard from './FileQueueCard.svelte';
@@ -72,6 +74,12 @@
               </button>
               {#if file.tech && !file.tech.lossless}
                 <span class="badge lossy" title="The source is a lossy format">lossy</span>
+              {/if}
+              {#if file.tech && file.status === 'ready' && isMetadataOnlyChange(airflac.settings, file.tech)}
+                <span
+                  class="badge"
+                  title="Already FLAC: the tags are rewritten and the audio is copied untouched, so the compression level does not apply"
+                >metadata only</span>
               {/if}
             </td>
 
