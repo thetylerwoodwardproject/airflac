@@ -4,7 +4,12 @@ import { join } from 'node:path';
 import { DEFAULT_SETTINGS, type ConversionSettings, type TechInfo } from '@airflac/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { buildFfmpegArgs, canStreamCopy, runConversion } from '../src/services/ffmpeg.js';
+import {
+  buildFfmpegArgs,
+  canStreamCopy,
+  resolveBitDepth,
+  runConversion,
+} from '../src/services/ffmpeg.js';
 import { probeFile } from '../src/services/ffprobe.js';
 import { setFlacPictureTypeToFrontCover } from '../src/services/metadata.js';
 import { runCapture } from '../src/utils/process.js';
@@ -38,6 +43,19 @@ const wavTech: TechInfo = {
 };
 
 const flacTech: TechInfo = { ...wavTech, codec: 'flac', codecLabel: 'FLAC', container: 'flac' };
+
+/** A lossy source reports no bit depth, because it genuinely has none. */
+const mp3Tech: TechInfo = {
+  ...wavTech,
+  codec: 'mp3',
+  codecLabel: 'MP3',
+  container: 'mp3',
+  sampleFormat: 'fltp',
+  bitDepth: null,
+  lossless: false,
+};
+
+const wav24Tech: TechInfo = { ...wavTech, sampleFormat: 's32', bitDepth: 24, sampleRate: 48000 };
 
 function argsFor(settings: ConversionSettings, tech: TechInfo = wavTech): string[] {
   return buildFfmpegArgs({
@@ -127,6 +145,37 @@ describe('ffmpeg argument building', () => {
     expect(args).toContain('ALBUM=$(whoami)');
     // The artist value contains "-af" as text but must not become a filter flag.
     expect(args).not.toContain('-af');
+  });
+});
+
+describe('bit depth resolution', () => {
+  it('leaves a lossless source alone when preserving', () => {
+    expect(resolveBitDepth('source', wavTech)).toBeNull();
+    expect(resolveBitDepth('source', wav24Tech)).toBeNull();
+    expect(argsFor(DEFAULT_SETTINGS, wav24Tech)).not.toContain('-sample_fmt');
+  });
+
+  it('falls back to 16-bit for a lossy source, which has no depth to preserve', () => {
+    expect(resolveBitDepth('source', mp3Tech)).toBe(16);
+
+    const args = argsFor(DEFAULT_SETTINGS, mp3Tech);
+    expect(args[args.indexOf('-sample_fmt') + 1]).toBe('s16');
+  });
+
+  it('lets an explicit choice override the fallback', () => {
+    expect(resolveBitDepth(24, mp3Tech)).toBe(24);
+    expect(argsFor({ ...DEFAULT_SETTINGS, bitDepth: 24 }, mp3Tech)).toContain('s32');
+  });
+
+  /**
+   * The fallback must never reach a lossless source: truncating a master to
+   * 16 bits because its depth could not be read would be silent data loss.
+   */
+  it('preserves a lossless source even when its depth is unknown', () => {
+    const unknownDepth: TechInfo = { ...wavTech, bitDepth: null, lossless: true };
+
+    expect(resolveBitDepth('source', unknownDepth)).toBeNull();
+    expect(argsFor(DEFAULT_SETTINGS, unknownDepth)).not.toContain('-sample_fmt');
   });
 });
 
@@ -307,6 +356,48 @@ describe('conversion fidelity', () => {
 
     expect(await audioStreamChecksum(output)).toBe(await audioStreamChecksum(FIXTURES.flac));
     expect((await probeFile(output)).metadata.title).toBe('New Title');
+  });
+
+  it('writes a 16-bit FLAC from an MP3 rather than an inflated 24-bit one', async () => {
+    const output = join(storage.path, 'converted', 'from-mp3.flac');
+    const source = await probeFile(FIXTURES.mp3);
+
+    expect(source.tech.lossless).toBe(false);
+    expect(source.tech.bitDepth).toBeNull();
+
+    await runConversion(
+      {
+        inputPath: FIXTURES.mp3,
+        outputPath: output,
+        artworkPath: null,
+        metadata: { title: '', artist: '', album: '' },
+        settings: DEFAULT_SETTINGS,
+        sourceTech: source.tech,
+      },
+      () => {},
+    );
+
+    const converted = await probeFile(output);
+    expect(converted.tech.bitDepth).toBe(16);
+    expect(converted.tech.sampleRate).toBe(source.tech.sampleRate);
+  });
+
+  it('still writes 24-bit when the user asks for it from a lossy source', async () => {
+    const output = join(storage.path, 'converted', 'from-mp3-24.flac');
+
+    await runConversion(
+      {
+        inputPath: FIXTURES.mp3,
+        outputPath: output,
+        artworkPath: null,
+        metadata: { title: '', artist: '', album: '' },
+        settings: { ...DEFAULT_SETTINGS, bitDepth: 24 },
+        sourceTech: (await probeFile(FIXTURES.mp3)).tech,
+      },
+      () => {},
+    );
+
+    expect((await probeFile(output)).tech.bitDepth).toBe(24);
   });
 
   it('reports a failure instead of throwing when the input is unreadable', async () => {

@@ -60,7 +60,8 @@
 
   <p class="muted note">
     Compression level affects encoding time and file size, not audio quality. Sample rate and bit
-    depth are left untouched unless you change them here.
+    depth are preserved unless you change them here; a lossy source has no bit depth of its own and
+    is written at 16-bit.
   </p>
 </section>
 

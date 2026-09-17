@@ -1,6 +1,6 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 
-import type { ConversionSettings, Metadata, TechInfo } from '@airflac/shared';
+import type { BitDepthChoice, ConversionSettings, Metadata, TechInfo } from '@airflac/shared';
 
 import { logger } from '../logger.js';
 import { buildTagArgs } from './metadata.js';
@@ -37,6 +37,23 @@ function sampleFormatFor(bitDepth: 16 | 24): string {
   return bitDepth === 16 ? 's16' : 's32';
 }
 
+/**
+ * Decides the bit depth to encode at, or null to leave the source's own depth alone.
+ *
+ * A lossy source has no bit depth to preserve: MP3, AAC, Vorbis and Opus all
+ * decode to float, and left to itself ffmpeg would write a 24-bit FLAC roughly
+ * three times the size of the original for no added information. Those sources
+ * fall back to 16 bits, the usual broadcast depth.
+ *
+ * The lossless guard matters: a lossless source that reports no depth is
+ * preserved rather than quietly truncated, so a master can never lose bits here.
+ */
+export function resolveBitDepth(choice: BitDepthChoice, tech: TechInfo): 16 | 24 | null {
+  if (choice !== 'source') return choice;
+  if (tech.bitDepth === null && !tech.lossless) return 16;
+  return null;
+}
+
 export function buildFfmpegArgs(plan: ConversionPlan): string[] {
   const { settings, sourceTech, artworkPath } = plan;
   const streamCopy = canStreamCopy(settings, sourceTech);
@@ -62,8 +79,9 @@ export function buildFfmpegArgs(plan: ConversionPlan): string[] {
       // soxr only runs when the user explicitly asked for a different rate.
       args.push('-af', 'aresample=resampler=soxr', '-ar', String(settings.sampleRate));
     }
-    if (settings.bitDepth !== 'source') {
-      args.push('-sample_fmt', sampleFormatFor(settings.bitDepth));
+    const bitDepth = resolveBitDepth(settings.bitDepth, sourceTech);
+    if (bitDepth !== null) {
+      args.push('-sample_fmt', sampleFormatFor(bitDepth));
     }
   }
 

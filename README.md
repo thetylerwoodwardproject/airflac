@@ -195,7 +195,23 @@ Station Promo Final.wav  ->  Station Promo Final.flac
 
 **Bit depth (default: preserve source).** As above. Reducing depth discards information.
 
+A lossy source is the one exception. MP3, AAC, Vorbis and Opus decode to float and have no bit depth
+to preserve, so AirFLAC writes them at 16-bit rather than letting FFmpeg default to 24-bit and
+tripling the file for no added information. Pick a depth explicitly if you want something else.
+
 The queue is shared: everyone with the page open sees the same files, and **Clear Queue** clears it for all of them.
+
+### Checking an install
+
+`scripts/smoke-test.sh` puts a generated test tone through the whole path — upload, inspection,
+conversion, download — and verifies the result really is a FLAC with the metadata written:
+
+```bash
+./scripts/smoke-test.sh http://localhost:8080
+```
+
+It needs `curl` and `ffmpeg`, clears the queue after itself, and exits non-zero if anything fails.
+CI runs the same script against both the Docker image and a real systemd install.
 
 ## Updating
 
@@ -256,7 +272,7 @@ Within the application:
 
 **"The uploaded file exceeds the configured size limit."** — Raise `AIRFLAC_MAX_UPLOAD_MB` and restart. If you are behind a reverse proxy, raise its body size limit too.
 
-**My FLAC is bigger than the MP3 it came from.** — Expected. A lossy file is small because information was thrown away; FLAC losslessly stores whatever it is given, including the decoded output of that lossy file, and stores it at full resolution. AirFLAC reports the increase honestly rather than calling it a saving. Nothing has gone wrong, and the FLAC does not sound worse than the MP3 — it just isn't smaller.
+**My FLAC is bigger than the MP3 it came from.** — Expected. A lossy file is small because information was thrown away, and no lossless format can store the result as compactly. AirFLAC writes lossy sources at 16-bit so the output stays as small as it reasonably can, and reports the increase honestly rather than calling it a saving. Nothing has gone wrong, and the FLAC does not sound worse than the MP3 — it just isn't smaller.
 
 **Progress sits on "Converting" without a percentage.** — AirFLAC could not determine the source duration reliably, so it shows the state rather than inventing a number. The conversion is still running.
 

@@ -187,8 +187,16 @@ install_service() {
 
   [ -f "$unit_source" ] || fail "Cannot find the systemd unit at ${unit_source}."
 
-  info "Installing systemd unit"
+  # ensure_node accepts any suitable Node on PATH, which is not always the
+  # /usr/bin/node the shipped unit assumes: a Node installed from a tarball or by
+  # nvm lands elsewhere. The installed unit is pointed at whichever one this
+  # system actually has, or the service would fail to start.
+  local node_bin
+  node_bin="$(command -v node)" || fail "Node.js is not on PATH."
+
+  info "Installing systemd unit (node: ${node_bin})"
   cp "$unit_source" "$UNIT_FILE"
+  sed -i "s|^ExecStart=.*|ExecStart=${node_bin} ${INSTALL_DIR}/server/dist/index.js|" "$UNIT_FILE"
   chmod 644 "$UNIT_FILE"
   systemctl daemon-reload
 }

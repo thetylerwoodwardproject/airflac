@@ -10,6 +10,7 @@ User=airflac
 Group=airflac
 WorkingDirectory=/opt/airflac
 EnvironmentFile=/etc/airflac/airflac.env
+# scripts/install.sh rewrites this line to point at whichever node the system has.
 ExecStart=/usr/bin/node /opt/airflac/server/dist/index.js
 Restart=on-failure
 RestartSec=5
