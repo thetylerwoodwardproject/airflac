@@ -30,7 +30,7 @@ _Screenshots go here._
 - Real conversion progress from FFmpeg, not an invented percentage
 - Download files individually, or the whole batch as a ZIP under the original filenames
 - Automatic cleanup of temporary files
-- Installs natively on Ubuntu and Debian, or runs in Docker
+- Installs natively on Ubuntu or Debian 13+, or runs in Docker
 
 ## Why AirFLAC?
 
@@ -88,7 +88,7 @@ A FLAC made from a 128 kbps MP3 contains exactly the same audible information as
 
 ## Installing on Ubuntu or Debian
 
-Tested on current Ubuntu and Debian releases. You need root access.
+Tested on current Ubuntu releases and Debian 13 (trixie) or newer. You need root access.
 
 ```bash
 git clone https://github.com/thetylerwoodwardproject/airflac-server.git
