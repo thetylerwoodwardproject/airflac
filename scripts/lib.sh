@@ -11,6 +11,7 @@ CONFIG_FILE="${CONFIG_DIR}/airflac.env"
 DATA_DIR="/var/lib/airflac"
 UNIT_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 MIN_NODE_MAJOR=22
+MIN_DEBIAN_MAJOR=13
 NODESOURCE_MAJOR=22
 
 info() { printf '  %s\n' "$*"; }
@@ -40,6 +41,15 @@ require_debian_like() {
 For other distributions, use the Docker deployment instead."
     ;;
   esac
+
+  # Debian 13 is the oldest release AirFLAC is tested on. Older ones are warned
+  # about rather than refused: they will often work, they are just not covered.
+  if [ "${ID:-}" = debian ] && [ -n "${VERSION_ID:-}" ]; then
+    local debian_major="${VERSION_ID%%.*}"
+    if [ "$debian_major" -lt "$MIN_DEBIAN_MAJOR" ] 2>/dev/null; then
+      warn "Debian ${VERSION_ID} is older than the tested minimum of ${MIN_DEBIAN_MAJOR}. The install may still work but is not covered by testing."
+    fi
+  fi
 }
 
 # Reads the configured port so the scripts can report and health-check the right URL.

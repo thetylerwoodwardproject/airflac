@@ -152,3 +152,64 @@ jobs:
       - name: Service logs
         if: always()
         run: sudo journalctl -u airflac --no-pager -n 100 || true
+
+  debian-install:
+    name: Debian 13 install
+    runs-on: ubuntu-latest
+    # Runs in a container because no Debian runner exists. systemd cannot run as
+    # PID 1 in a plain container, so service management is left to the Ubuntu job
+    # above — systemd is the same software on both distributions, while the apt
+    # packages and the available Node version are what actually differ.
+    container: debian:13
+    timeout-minutes: 25
+    steps:
+      - name: Install prerequisites
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq git curl ca-certificates util-linux
+
+      - uses: actions/checkout@v4
+
+      - name: Report what this Debian ships
+        run: |
+          . /etc/os-release
+          echo "distribution: ${PRETTY_NAME}"
+          echo "packaged node: $(apt-cache policy nodejs | sed -n 's/^  Candidate: //p')"
+
+      - name: Run the installer, without the systemd steps
+        run: |
+          cd scripts
+          # shellcheck disable=SC1091
+          . ./lib.sh
+          require_root
+          require_debian_like
+          ensure_ffmpeg
+          ensure_node
+          create_service_user
+          install_application "$GITHUB_WORKSPACE"
+          create_config_if_missing
+          create_data_dirs
+
+      # Debian's own nodejs package is older than AirFLAC needs, so this is the
+      # one place the NodeSource install path in ensure_node actually runs: the
+      # Ubuntu runner already has a new enough Node and skips it entirely.
+      - name: Node meets the minimum
+        run: |
+          echo "node: $(node -v)"
+          major="$(node -p 'process.versions.node.split(".")[0]')"
+          [ "$major" -ge 22 ]
+
+      - name: Start as the service account
+        run: |
+          setpriv --reuid=airflac --regid="$(id -g airflac)" --clear-groups \
+            env AIRFLAC_STORAGE_PATH=/var/lib/airflac AIRFLAC_PORT=8080 \
+            node /opt/airflac/server/dist/index.js &
+          for _ in $(seq 1 30); do
+            curl -fsS http://localhost:8080/api/health >/dev/null 2>&1 && exit 0
+            sleep 1
+          done
+          echo "AirFLAC did not become healthy" >&2
+          exit 1
+
+      - name: Smoke test
+        run: ./scripts/smoke-test.sh http://localhost:8080

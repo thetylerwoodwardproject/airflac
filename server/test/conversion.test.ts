@@ -1,7 +1,13 @@
-import { copyFile } from 'node:fs/promises';
+import { copyFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { DEFAULT_SETTINGS, type ConversionSettings, type TechInfo } from '@airflac/shared';
+import {
+  DEFAULT_SETTINGS,
+  isMetadataOnlyChange,
+  uncompressedPcmBytes,
+  type ConversionSettings,
+  type TechInfo,
+} from '@airflac/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -145,6 +151,59 @@ describe('ffmpeg argument building', () => {
     expect(args).toContain('ALBUM=$(whoami)');
     // The artist value contains "-af" as text but must not become a filter flag.
     expect(args).not.toContain('-af');
+  });
+});
+
+describe('uncompressed PCM size', () => {
+  it('computes the raw size a lossless source would occupy', () => {
+    // 44100 samples/s x 2 channels x 2 bytes x 1s
+    expect(uncompressedPcmBytes(wavTech)).toBe(176_400);
+    // 48000 x 2 x 3 bytes x 1s
+    expect(uncompressedPcmBytes(wav24Tech)).toBe(288_000);
+  });
+
+  it('returns null for a lossy source, which has no fixed sample size', () => {
+    expect(uncompressedPcmBytes(mp3Tech)).toBeNull();
+  });
+
+  it('returns null rather than a wrong number when a field is missing', () => {
+    expect(uncompressedPcmBytes({ ...wavTech, durationSec: null })).toBeNull();
+    expect(uncompressedPcmBytes({ ...wavTech, channels: null })).toBeNull();
+    expect(uncompressedPcmBytes({ ...wavTech, sampleRate: null })).toBeNull();
+  });
+
+  it('matches the real size of a PCM fixture', async () => {
+    const { tech } = await probeFile(FIXTURES.wav16);
+    const { size } = await stat(FIXTURES.wav16);
+
+    const raw = uncompressedPcmBytes(tech);
+    expect(raw).not.toBeNull();
+    // The file carries a WAV header on top of the raw samples, so it is slightly
+    // larger; anything beyond a hundred bytes of overhead means the maths is wrong.
+    expect(size - raw!).toBeGreaterThanOrEqual(0);
+    expect(size - raw!).toBeLessThan(200);
+  });
+});
+
+/**
+ * The server decides how to invoke ffmpeg and the interface decides what to show,
+ * from this one predicate. A divergence would mean the queue promising something
+ * the conversion does not do.
+ */
+describe('shared metadata-only predicate', () => {
+  it('agrees with the server-side stream copy decision', () => {
+    const cases: [ConversionSettings, TechInfo][] = [
+      [DEFAULT_SETTINGS, flacTech],
+      [DEFAULT_SETTINGS, wavTech],
+      [DEFAULT_SETTINGS, mp3Tech],
+      [{ ...DEFAULT_SETTINGS, sampleRate: 48000 }, flacTech],
+      [{ ...DEFAULT_SETTINGS, bitDepth: 24 }, flacTech],
+      [{ ...DEFAULT_SETTINGS, sampleRate: 44100 }, flacTech],
+    ];
+
+    for (const [settings, tech] of cases) {
+      expect(isMetadataOnlyChange(settings, tech)).toBe(canStreamCopy(settings, tech));
+    }
   });
 });
 

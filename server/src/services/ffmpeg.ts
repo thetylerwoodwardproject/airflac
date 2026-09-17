@@ -1,6 +1,12 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 
-import type { BitDepthChoice, ConversionSettings, Metadata, TechInfo } from '@airflac/shared';
+import {
+  isMetadataOnlyChange,
+  type BitDepthChoice,
+  type ConversionSettings,
+  type Metadata,
+  type TechInfo,
+} from '@airflac/shared';
 
 import { logger } from '../logger.js';
 import { buildTagArgs } from './metadata.js';
@@ -20,16 +26,11 @@ export interface ConversionPlan {
 /**
  * True when the output can be produced without re-encoding the audio.
  *
- * A FLAC source whose sample rate and bit depth are being preserved only needs
- * its tags rewritten, so the audio stream is copied verbatim. Asking for a
- * different rate or depth is the explicit request that forces a re-encode.
+ * Shares one implementation with the interface, so what the queue shows and what
+ * ffmpeg is actually told to do cannot drift apart.
  */
 export function canStreamCopy(settings: ConversionSettings, tech: TechInfo): boolean {
-  if (tech.codec.toLowerCase() !== 'flac') return false;
-
-  const rateUnchanged = settings.sampleRate === 'source' || settings.sampleRate === tech.sampleRate;
-  const depthUnchanged = settings.bitDepth === 'source' || settings.bitDepth === tech.bitDepth;
-  return rateUnchanged && depthUnchanged;
+  return isMetadataOnlyChange(settings, tech);
 }
 
 /** FLAC carries 16-bit samples as s16 and 24-bit samples as s32. */

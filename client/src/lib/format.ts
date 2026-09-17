@@ -1,3 +1,5 @@
+import { uncompressedPcmBytes, type TechInfo } from '@airflac/shared';
+
 export function formatBytes(bytes: number | null | undefined): string {
   if (bytes === null || bytes === undefined) return '—';
   if (bytes < 1024) return `${bytes} B`;
@@ -73,4 +75,27 @@ export function compareSizes(original: number, converted: number): SizeCompariso
 
   const percent = (Math.abs(difference) / original) * 100;
   return { text: `${percent.toFixed(1)}% smaller`, larger: false };
+}
+
+/**
+ * Describes what a source file costs on disk, and for a compressed lossless
+ * source how that compares with raw PCM.
+ *
+ * This is the number the whole exercise is about: it shows a WAV as the
+ * uncompressed baseline, and an existing FLAC as the saving it already has,
+ * which is also why re-encoding one has little left to give.
+ */
+export function describeStorage(originalSize: number, tech: TechInfo | null): string {
+  const size = formatBytes(originalSize);
+  if (!tech) return size;
+
+  if (tech.codec.toLowerCase().startsWith('pcm_')) {
+    return `${size} · uncompressed PCM`;
+  }
+
+  const raw = uncompressedPcmBytes(tech);
+  if (!tech.lossless || raw === null || raw === 0) return size;
+
+  const percent = Math.round((originalSize / raw) * 100);
+  return `${size} · ${percent}% of uncompressed PCM`;
 }

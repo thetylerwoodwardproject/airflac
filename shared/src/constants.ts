@@ -1,4 +1,4 @@
-import type { ConversionSettings } from './types.js';
+import type { ConversionSettings, TechInfo } from './types.js';
 
 export const APP_NAME = 'AirFLAC';
 export const APP_TAGLINE = 'Lossless audio conversion for broadcast.';
@@ -85,3 +85,35 @@ export const ACCEPTED_ARTWORK_TYPES: ReadonlySet<string> = new Set(['image/jpeg'
 
 /** Terminal states: a file in one of these is no longer being worked on. */
 export const TERMINAL_STATUSES: ReadonlySet<string> = new Set(['complete', 'failed']);
+
+/**
+ * True when producing the FLAC needs nothing but a tag rewrite.
+ *
+ * A FLAC source whose sample rate and bit depth are being preserved has its
+ * audio stream copied verbatim rather than re-encoded, so the compression level
+ * does not apply to it. Both sides of the app depend on this: the server to
+ * decide how to invoke ffmpeg, the interface to say so before the user converts.
+ */
+export function isMetadataOnlyChange(settings: ConversionSettings, tech: TechInfo): boolean {
+  if (tech.codec.toLowerCase() !== 'flac') return false;
+
+  const rateUnchanged = settings.sampleRate === 'source' || settings.sampleRate === tech.sampleRate;
+  const depthUnchanged = settings.bitDepth === 'source' || settings.bitDepth === tech.bitDepth;
+  return rateUnchanged && depthUnchanged;
+}
+
+/**
+ * What this audio would occupy as uncompressed PCM.
+ *
+ * Returns null for a lossy source, which has no fixed sample size to calculate
+ * from. Used to show how much space a lossless file is already saving, which is
+ * the whole reason for converting to FLAC in the first place.
+ */
+export function uncompressedPcmBytes(
+  tech: Pick<TechInfo, 'sampleRate' | 'channels' | 'bitDepth' | 'durationSec'>,
+): number | null {
+  const { sampleRate, channels, bitDepth, durationSec } = tech;
+  if (!sampleRate || !channels || !bitDepth || !durationSec) return null;
+
+  return Math.round(sampleRate * channels * (bitDepth / 8) * durationSec);
+}

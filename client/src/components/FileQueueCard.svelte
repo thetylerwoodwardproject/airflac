@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { QueuedFile } from '@airflac/shared';
+  import { isMetadataOnlyChange, type QueuedFile } from '@airflac/shared';
 
   import { downloadFileUrl } from '../lib/api.js';
   import {
@@ -37,6 +37,9 @@
 
     {#if file.tech && !file.tech.lossless}
       <span class="badge lossy">lossy</span>
+    {/if}
+    {#if file.tech && file.status === 'ready' && isMetadataOnlyChange(airflac.settings, file.tech)}
+      <span class="badge">metadata only</span>
     {/if}
   </div>
 
@@ -126,13 +129,18 @@
     overflow-wrap: anywhere;
   }
 
-  .badge.lossy {
+  .badge {
     padding: 1px 6px;
     font-size: 0.68rem;
     border-radius: 2px;
-    color: var(--warning);
-    border: 1px solid color-mix(in srgb, var(--warning) 40%, transparent);
+    color: var(--text-muted);
+    border: 1px solid var(--border-strong);
     flex-shrink: 0;
+  }
+
+  .badge.lossy {
+    color: var(--warning);
+    border-color: color-mix(in srgb, var(--warning) 40%, transparent);
   }
 
   .facts {
