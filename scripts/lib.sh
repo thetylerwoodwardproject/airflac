@@ -131,6 +131,20 @@ install_application() {
   *) fail "Refusing to replace '${INSTALL_DIR}': expected /opt/airflac." ;;
   esac
 
+  # This function deletes INSTALL_DIR and then copies the source into it, and the
+  # scripts are themselves installed there. Running the installed copy of
+  # update.sh would therefore delete the tree it is about to copy from, taking the
+  # installation with it. Refuse instead.
+  local resolved_source
+  resolved_source="$(cd "$source_dir" 2>/dev/null && pwd -P)" ||
+    fail "Cannot read the source directory ${source_dir}."
+
+  if [ "$resolved_source" = "$INSTALL_DIR" ]; then
+    fail "Refusing to install ${INSTALL_DIR} into itself, which would delete it.
+Run this from a source checkout instead, for example:
+  cd /usr/local/src/airflac && sudo git pull && sudo ./scripts/update.sh"
+  fi
+
   info "Installing application files into ${INSTALL_DIR}"
   rm -rf "${INSTALL_DIR:?}"
   mkdir -p "$INSTALL_DIR"

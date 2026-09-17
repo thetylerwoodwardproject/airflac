@@ -91,9 +91,32 @@ A FLAC made from a 128 kbps MP3 contains exactly the same audible information as
 Tested on current Ubuntu releases and Debian 13 (trixie) or newer. You need root access.
 
 ```bash
+curl -fsSL https://raw.githubusercontent.com/thetylerwoodwardproject/airflac-server/main/scripts/bootstrap.sh | sudo bash
+```
+
+That clones the repository to `/usr/local/src/airflac` and runs the installer from it.
+
+If you would rather read the script before running it as root — a reasonable habit, and the reason the
+installer is a plain file in this repository rather than something minified — download it first, or skip
+it entirely and clone by hand:
+
+```bash
+# Read it, then run it
+curl -fsSL https://raw.githubusercontent.com/thetylerwoodwardproject/airflac-server/main/scripts/bootstrap.sh -o bootstrap.sh
+less bootstrap.sh
+sudo bash bootstrap.sh
+
+# Or do the same thing yourself
 git clone https://github.com/thetylerwoodwardproject/airflac-server.git
 cd airflac-server
 sudo ./scripts/install.sh
+```
+
+To install a specific version rather than the tip of `main`, set `AIRFLAC_REF` to a tag, branch or commit,
+and `AIRFLAC_SRC_DIR` to put the checkout somewhere else:
+
+```bash
+curl -fsSL .../bootstrap.sh | sudo AIRFLAC_REF=v1.0.0 bash
 ```
 
 The installer checks the distribution, installs FFmpeg from the package repositories, installs a current Node.js LTS from NodeSource if the system one is too old, creates an `airflac` service account, builds the application, and starts it under systemd.
@@ -215,15 +238,19 @@ CI runs the same script against both the Docker image and a real systemd install
 
 ## Updating
 
-Native install:
+Native install — from the source checkout, which is `/usr/local/src/airflac` if you used the one-step installer:
 
 ```bash
-cd airflac-server
-git pull
+cd /usr/local/src/airflac
+sudo git pull
 sudo ./scripts/update.sh
 ```
 
 Your configuration in `/etc/airflac` and your audio in `/var/lib/airflac` are preserved. The old configuration file is backed up alongside itself before anything changes.
+
+Run `update.sh` from the source checkout, not from `/opt/airflac`. The installer replaces `/opt/airflac`
+wholesale, so updating from inside it would delete the tree it is copying from; the script refuses to do
+that and tells you where to run it instead.
 
 Docker:
 
