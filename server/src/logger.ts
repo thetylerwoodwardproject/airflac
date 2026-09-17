@@ -2,7 +2,16 @@ import type { LogLevel } from './config.js';
 
 const LEVEL_ORDER: Record<LogLevel, number> = { debug: 0, info: 1, warn: 2, error: 3 };
 
-let threshold = LEVEL_ORDER.info;
+function initialThreshold(): number {
+  // Read directly rather than through config(), so logging behaves correctly in
+  // code paths that never load the full configuration, such as tests.
+  const configured = process.env.AIRFLAC_LOG_LEVEL?.trim().toLowerCase();
+  return configured && configured in LEVEL_ORDER
+    ? LEVEL_ORDER[configured as LogLevel]
+    : LEVEL_ORDER.info;
+}
+
+let threshold = initialThreshold();
 
 export function setLogLevel(level: LogLevel): void {
   threshold = LEVEL_ORDER[level];

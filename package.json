@@ -21,7 +21,7 @@
     "build": "npm run build -w @airflac/shared && npm run build -w @airflac/server && npm run build -w @airflac/client",
     "start": "node server/dist/index.js",
     "lint": "eslint . && svelte-check --workspace client --threshold error",
-    "test": "vitest run",
+    "test": "npm run build -w @airflac/shared && vitest run",
     "test:watch": "vitest"
   },
   "devDependencies": {
