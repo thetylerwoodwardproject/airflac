@@ -1,0 +1,24 @@
+services:
+  airflac:
+    build: .
+    image: airflac:latest
+    container_name: airflac
+    ports:
+      - "8080:8080"
+    volumes:
+      - airflac-data:/data
+    environment:
+      AIRFLAC_PORT: "8080"
+      AIRFLAC_STORAGE_PATH: /data
+      # AIRFLAC_MAX_UPLOAD_MB: "1000"
+      # AIRFLAC_FILE_RETENTION_HOURS: "24"
+      # AIRFLAC_FLAC_COMPRESSION_LEVEL: "5"
+      # AIRFLAC_MAX_CONCURRENT_CONVERSIONS: "2"
+      # Set to true only when running behind a reverse proxy you control.
+      # AIRFLAC_TRUST_PROXY: "false"
+    restart: unless-stopped
+    # Reaps any ffmpeg process left behind if the server is killed abruptly.
+    init: true
+
+volumes:
+  airflac-data:

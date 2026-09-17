@@ -1,0 +1,13 @@
+node_modules
+**/node_modules
+**/dist
+storage
+.git
+.gitignore
+.env
+.env.local
+*.log
+server/test/fixtures/generated
+scripts
+systemd
+README.md

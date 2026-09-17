@@ -1,0 +1,154 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push supersedes an in-flight run for the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # The test fixtures are generated with ffmpeg rather than committed.
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+
+  shell:
+    name: Shell scripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq shellcheck
+
+      - name: Lint install scripts
+        working-directory: scripts
+        run: shellcheck -x install.sh update.sh uninstall.sh lib.sh smoke-test.sh
+
+  docker:
+    name: Docker image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+
+      - name: Build the image
+        run: docker build -t airflac:ci .
+
+      - name: Start the container
+        run: docker run -d --name airflac -p 8080:8080 airflac:ci
+
+      # Polls the HEALTHCHECK that ships in the Dockerfile rather than a separate probe,
+      # so a broken health check fails here instead of in production.
+      - name: Wait for the container to report healthy
+        run: |
+          for _ in $(seq 1 60); do
+            status="$(docker inspect --format '{{.State.Health.Status}}' airflac)"
+            echo "health: ${status}"
+            [ "$status" = healthy ] && exit 0
+            [ "$status" = unhealthy ] && break
+            sleep 2
+          done
+          echo "container never became healthy" >&2
+          docker logs airflac
+          exit 1
+
+      - name: Run the smoke test against the container
+        run: ./scripts/smoke-test.sh http://localhost:8080
+
+      - name: Confirm it runs as a non-root user
+        run: |
+          user="$(docker exec airflac id -un)"
+          echo "container user: ${user}"
+          [ "$user" != root ]
+
+      - name: Container logs
+        if: always()
+        run: docker logs airflac
+
+  native-install:
+    name: Ubuntu install, update and uninstall
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      # Deliberately no setup-node: install.sh has to resolve Node itself, which is
+      # the path a real operator takes.
+      - name: Install AirFLAC
+        run: sudo ./scripts/install.sh
+
+      - name: Service is running
+        run: |
+          systemctl is-active --quiet airflac
+          systemctl is-enabled --quiet airflac
+          systemctl show airflac --property=User,WorkingDirectory,ExecStart
+
+      # Verified here rather than against the repo copy, because install.sh
+      # rewrites ExecStart to the Node this machine actually has.
+      - name: Installed unit is valid
+        run: sudo systemd-analyze verify /etc/systemd/system/airflac.service
+
+      - name: Smoke test the installed service
+        run: ./scripts/smoke-test.sh http://localhost:8080
+
+      - name: Storage is owned by the service account
+        run: |
+          sudo test -d /var/lib/airflac/uploads
+          owner="$(stat -c '%U' /var/lib/airflac)"
+          echo "owner: ${owner}"
+          [ "$owner" = airflac ]
+
+      - name: Update in place
+        run: sudo ./scripts/update.sh
+
+      - name: Still healthy after the update
+        run: |
+          systemctl is-active --quiet airflac
+          ./scripts/smoke-test.sh http://localhost:8080
+
+      # No TTY, so uninstall.sh must take its keep-everything path. That default is
+      # the promise the script makes, so it is asserted rather than assumed.
+      - name: Uninstall without a terminal
+        run: sudo ./scripts/uninstall.sh < /dev/null
+
+      - name: Service is gone but audio and configuration survived
+        run: |
+          ! systemctl is-active --quiet airflac
+          test ! -e /etc/systemd/system/airflac.service
+          test ! -d /opt/airflac
+          sudo test -d /var/lib/airflac
+          sudo test -f /etc/airflac/airflac.env
+
+      - name: Service logs
+        if: always()
+        run: sudo journalctl -u airflac --no-pager -n 100 || true

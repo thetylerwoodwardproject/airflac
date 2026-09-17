@@ -1,0 +1,16 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+.env
+.env.local
+
+storage/uploads/*
+storage/converted/*
+storage/archives/*
+!storage/*/.gitkeep
+
+server/test/fixtures/generated/
+
+.DS_Store
+*.log
