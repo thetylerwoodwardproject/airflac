@@ -71,7 +71,7 @@
     grid-template-columns: repeat(3, minmax(120px, 160px)) 1fr;
     align-items: start;
     gap: var(--gap);
-    padding: 14px 16px;
+    padding: 20px 22px;
   }
 
   .note {

@@ -15,7 +15,7 @@
 
   --radius: 6px;
   --radius-lg: 10px;
-  --gap: 16px;
+  --gap: 20px;
 
   color-scheme: dark;
   font-family: 'DM Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica,
@@ -63,6 +63,9 @@ h3 {
 }
 
 button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font: inherit;
   font-weight: 600;
   font-size: 0.8rem;
@@ -73,6 +76,13 @@ button {
   padding: 12px 17px;
   cursor: pointer;
   transition: filter 0.15s;
+}
+
+/* Podstudio's outline-icon language: 24x24 viewBox, 1.8px stroke, round caps. */
+.icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
 }
 
 button:hover:not(:disabled) {

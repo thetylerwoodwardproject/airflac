@@ -37,11 +37,11 @@
   }
 
   h1 {
-    font-size: 1.35rem;
+    font-size: 2.1rem;
   }
 
   .tagline {
-    margin: 2px 0 0;
+    margin: 4px 0 0;
     font-size: 0.85rem;
   }
 

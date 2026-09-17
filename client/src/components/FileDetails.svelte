@@ -127,10 +127,11 @@
   }
 
   h3 {
-    font-size: 0.75rem;
+    font-size: 0.68rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-muted);
+    letter-spacing: 0.09em;
+    color: var(--accent);
     margin-bottom: 10px;
   }
 

@@ -91,7 +91,7 @@
   main {
     max-width: 1180px;
     margin: 0 auto;
-    padding: 22px 16px 60px;
+    padding: 32px 20px 60px;
     display: flex;
     flex-direction: column;
     gap: var(--gap);
