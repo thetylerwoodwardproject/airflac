@@ -1,22 +1,25 @@
 :root {
-  --bg: #1b1d1f;
-  --panel: #232629;
-  --panel-raised: #2a2e31;
-  --border: #33383c;
-  --border-strong: #454b50;
-  --text: #e6e4e1;
-  --text-muted: #969b9f;
-  --accent: #4fb49a;
-  --accent-muted: #2f6f5e;
+  /* Charcoal surfaces; the lime accent is reserved for actions and emphasis.
+     Palette matches Podstudio's dark theme, AirFLAC's sibling project. */
+  --bg: #18181b;
+  --panel: #222225;
+  --panel-raised: #2d2d31;
+  --border: #3b3b41;
+  --border-strong: #4a4a52;
+  --text: #f0f0f2;
+  --text-muted: #aaaab3;
+  --accent: #c8ff3d;
+  --accent-muted: #8fb32b;
   --danger: #d4796b;
   --warning: #d9b169;
 
-  --radius: 4px;
+  --radius: 6px;
+  --radius-lg: 10px;
   --gap: 16px;
 
   color-scheme: dark;
-  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
-    sans-serif;
+  font-family: 'DM Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
   font-size: 15px;
   line-height: 1.5;
 }
@@ -38,8 +41,10 @@ h1,
 h2,
 h3 {
   margin: 0;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-family: 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  font-weight: 750;
+  letter-spacing: -0.02em;
 }
 
 .mono {
@@ -53,22 +58,25 @@ h3 {
 
 /* A single visible focus treatment, used everywhere. */
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 3px solid var(--accent);
   outline-offset: 2px;
 }
 
 button {
   font: inherit;
+  font-weight: 600;
+  font-size: 0.8rem;
   color: inherit;
   background: var(--panel-raised);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
-  padding: 7px 14px;
+  padding: 12px 17px;
   cursor: pointer;
+  transition: filter 0.15s;
 }
 
 button:hover:not(:disabled) {
-  border-color: var(--accent-muted);
+  filter: brightness(0.97);
 }
 
 button:disabled {
@@ -77,14 +85,9 @@ button:disabled {
 }
 
 button.primary {
-  background: var(--accent-muted);
+  background: var(--accent);
   border-color: var(--accent);
-  color: #f2fbf8;
-  font-weight: 600;
-}
-
-button.primary:hover:not(:disabled) {
-  background: #38826e;
+  color: #1a2005;
 }
 
 button.quiet {
@@ -99,7 +102,7 @@ select {
   background: var(--bg);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
-  padding: 6px 9px;
+  padding: 11px 12px;
   width: 100%;
 }
 
@@ -118,7 +121,7 @@ label {
 .panel {
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
 }
 
 .visually-hidden {

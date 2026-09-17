@@ -156,6 +156,10 @@
     border-bottom: none;
   }
 
+  tbody tr:not(.details-row):hover {
+    background: var(--panel-raised);
+  }
+
   tr.expanded > td {
     border-bottom-color: transparent;
   }
@@ -197,16 +201,17 @@
   .badge {
     display: inline-block;
     margin-left: 8px;
-    padding: 1px 6px;
-    font-size: 0.68rem;
-    border-radius: 2px;
-    border: 1px solid var(--border-strong);
+    padding: 5px 8px;
+    font-size: 0.6rem;
+    font-weight: 650;
+    letter-spacing: 0.05em;
+    border-radius: 4px;
+    background: var(--panel-raised);
     color: var(--text-muted);
   }
 
   .badge.lossy {
     color: var(--warning);
-    border-color: color-mix(in srgb, var(--warning) 40%, transparent);
   }
 
   .size {

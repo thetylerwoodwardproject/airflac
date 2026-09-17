@@ -33,8 +33,8 @@
     min-width: 60px;
     height: 4px;
     margin-top: 5px;
-    background: var(--border);
-    border-radius: 2px;
+    background: var(--panel-raised);
+    border-radius: 4px;
     overflow: hidden;
   }
 
