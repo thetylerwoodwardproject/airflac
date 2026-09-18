@@ -2,10 +2,6 @@
 
 A free, open-source, self-hosted tool for radio stations to convert audio to lossless FLAC for compatible broadcast automation systems.
 
-```
-AirFLAC                                      v1.0.0
-Lossless audio conversion for broadcast.
-```
 ![Screenshot](screenshot.png)
 
 ## Overview
