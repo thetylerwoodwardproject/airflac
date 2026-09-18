@@ -47,7 +47,7 @@ jobs:
 
       - name: Lint install scripts
         working-directory: scripts
-        run: shellcheck -x install.sh update.sh uninstall.sh lib.sh smoke-test.sh
+        run: shellcheck -x bootstrap.sh install.sh update.sh uninstall.sh lib.sh smoke-test.sh
 
   docker:
     name: Docker image
@@ -148,6 +148,30 @@ jobs:
           test ! -d /opt/airflac
           sudo test -d /var/lib/airflac
           sudo test -f /etc/airflac/airflac.env
+
+      # The machine has just been uninstalled, so this is a genuine first-time
+      # install through the path a new user takes. Run from the checkout rather
+      # than through curl, since the raw URL only serves main; everything after
+      # the download is identical.
+      - name: One-step install via bootstrap
+        env:
+          AIRFLAC_REF: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          sudo -E ./scripts/bootstrap.sh
+          systemctl is-active --quiet airflac
+          ./scripts/smoke-test.sh http://localhost:8080
+
+      # install_application deletes the install directory before copying into it,
+      # and the scripts live inside that directory, so the installed copy of
+      # update.sh must refuse rather than delete the installation it runs from.
+      - name: The installed update.sh refuses to run against itself
+        run: |
+          if sudo /opt/airflac/scripts/update.sh; then
+            echo "update.sh ran from inside the installation instead of refusing" >&2
+            exit 1
+          fi
+          sudo test -f /opt/airflac/package.json
+          systemctl is-active --quiet airflac
 
       - name: Service logs
         if: always()

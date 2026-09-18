@@ -18,6 +18,9 @@
     disabled={readyCount === 0 || airflac.busy || airflac.uploading}
     onclick={() => airflac.convert()}
   >
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M13 3 4 14h6l-1 7 9-11h-6z" />
+    </svg>
     Convert to FLAC{readyCount > 1 ? ` (${readyCount})` : ''}
   </button>
 
