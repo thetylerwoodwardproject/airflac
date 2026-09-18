@@ -2,10 +2,6 @@
 
 A free, open-source, self-hosted tool for radio stations to convert audio to lossless FLAC for compatible broadcast automation systems.
 
-![Screenshot](screenshot.png)
-
-![Metadata](metadata.png)
-
 ## Overview
 
 AirFLAC is a small web utility for radio stations and broadcast engineers. Drop audio files into a browser, see exactly what they are, correct the metadata, and convert them to FLAC.
@@ -16,7 +12,9 @@ The whole application is one Node.js process and FFmpeg. There is no database to
 
 ## Screenshots
 
-_Screenshots go here._
+![Screenshot](screenshot.png)
+
+![Metadata](metadata.png)
 
 ## Features
 
