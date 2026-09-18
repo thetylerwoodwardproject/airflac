@@ -83,15 +83,21 @@
       Nothing queued. Drop WAV, FLAC, AIFF, MP3, AAC or any other file FFmpeg can read.
     </p>
   {/if}
+
+  <footer class="site-footer">
+    An open source tool for broadcasters by
+    <a href="https://fullymodulated.com" target="_blank" rel="noopener noreferrer">Fully Modulated</a>
+  </footer>
 </main>
 
 <LossyWarningDialog codecPhrase={lossyPhrase} onDismiss={() => (lossyPhrase = null)} />
 
 <style>
   main {
+    min-height: 100vh;
     max-width: 1180px;
     margin: 0 auto;
-    padding: 32px 20px 60px;
+    padding: 32px 20px 24px;
     display: flex;
     flex-direction: column;
     gap: var(--gap);
@@ -113,5 +119,26 @@
   .empty {
     margin: 4px 0 0;
     font-size: 0.88rem;
+  }
+
+  /* Pinned to the bottom of the viewport when content is short, and simply
+     trails the content when it grows past viewport height. */
+  .site-footer {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .site-footer a {
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .site-footer a:hover {
+    text-decoration: underline;
   }
 </style>
