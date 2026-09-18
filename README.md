@@ -4,6 +4,8 @@ A free, open-source, self-hosted tool for radio stations to convert audio to los
 
 ![Screenshot](screenshot.png)
 
+![Metadata](metadata.png)
+
 ## Overview
 
 AirFLAC is a small web utility for radio stations and broadcast engineers. Drop audio files into a browser, see exactly what they are, correct the metadata, and convert them to FLAC.
